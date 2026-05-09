@@ -1,0 +1,49 @@
+{
+  "skill": "skill-creator",
+  "evals": [
+    {
+      "name": "trigger-create-skill",
+      "type": "trigger",
+      "expected": "should-trigger",
+      "prompt": "帮我创建一个 skill，用来自动生成波浪分析报告"
+    },
+    {
+      "name": "trigger-make-skill-from-workflow",
+      "type": "trigger",
+      "expected": "should-trigger",
+      "prompt": "I want to turn this repeated deployment workflow into a reusable skill"
+    },
+    {
+      "name": "trigger-audit-skill",
+      "type": "trigger",
+      "expected": "should-trigger",
+      "prompt": "audit my jetson-compute skill against the SPEC"
+    },
+    {
+      "name": "no-trigger-one-off-script",
+      "type": "trigger",
+      "expected": "should-not-trigger",
+      "prompt": "写个脚本帮我批量重命名文件"
+    },
+    {
+      "name": "no-trigger-edit-skill-content",
+      "type": "trigger",
+      "expected": "should-not-trigger",
+      "prompt": "帮我改一下 jetson-compute skill 里面 SSH 的 IP 地址"
+    },
+    {
+      "name": "core-function-create-minimal-skill",
+      "type": "function",
+      "prompt": "create a skill called 'daily-report' that generates a daily stock analysis summary",
+      "expectations": [
+        "Creates directory /root/.claude/skills/daily-report/",
+        "SKILL.md has all 8 required sections in correct order",
+        "Frontmatter has name and description",
+        "Description first 250 chars contain trigger keywords",
+        "Workflow uses numbered action steps with markers",
+        "SKILL.md is under 500 lines",
+        "Resources section references all subdirectory files"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>📈 股票交易看板</title>
+<style>
+:root {
+  --bg: #0f1117; --surface: #1a1d28; --surface2: #242736;
+  --border: #2d3148; --text: #e0e2ec; --text2: #8b8fa7;
+  --green: #22c55e; --red: #ef4444; --amber: #f59e0b;
+  --blue: #3b82f6; --purple: #a78bfa;
+  --green-bg: rgba(34,197,94,.1); --red-bg: rgba(239,68,68,.1);
+  --amber-bg: rgba(245,158,11,.1);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans SC",sans-serif; line-height:1.6; padding:12px; max-width:960px; margin:0 auto; }
+h1 { font-size:1.4em; margin-bottom:4px; }
+h2 { font-size:1.1em; color:var(--blue); margin:20px 0 10px; padding-bottom:6px; border-bottom:1px solid var(--border); }
+h3 { font-size:.95em; color:var(--text2); margin:12px 0 6px; }
+.meta { color:var(--text2); font-size:.8em; margin-bottom:16px; }
+.badge { display:inline-block; padding:2px 8px; border-radius:10px; font-size:.75em; font-weight:600; }
+.badge-green { background:var(--green-bg); color:var(--green); }
+.badge-red { background:var(--red-bg); color:var(--red); }
+.badge-amber { background:var(--amber-bg); color:var(--amber); }
+
+/* ── 持仓卡片 ── */
+.cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:8px; margin:10px 0; }
+.card { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:10px; text-align:center; transition:.15s; }
+.card:hover { border-color:var(--blue); }
+.card .name { font-weight:700; font-size:.95em; }
+.card .code { font-size:.72em; color:var(--text2); }
+.card .pnl { font-size:1.2em; font-weight:700; margin:6px 0 2px; }
+.card .pos { font-size:.8em; color:var(--text2); }
+.card .macd { margin-top:6px; }
+.card.golden { border-left:3px solid var(--green); }
+.card.death { border-left:3px solid var(--red); }
+.card.cash { border-left:3px solid var(--amber); background:var(--surface2); }
+.pnl-up { color:var(--green); }
+.pnl-down { color:var(--red); }
+.pnl-flat { color:var(--text2); }
+
+/* ── 警告条 ── */
+.alert { background:var(--red-bg); border:1px solid rgba(239,68,68,.3); border-radius:6px; padding:8px 12px; margin:10px 0; font-size:.85em; }
+.alert-amber { background:var(--amber-bg); border-color:rgba(245,158,11,.3); }
+
+/* ── 操作要点 ── */
+.action-group { background:var(--surface); border-radius:8px; padding:10px 12px; margin:8px 0; border:1px solid var(--border); }
+.action-group summary { cursor:pointer; font-weight:600; font-size:.9em; list-style:none; }
+.action-group summary::before { content:'▸ '; color:var(--blue); }
+.action-group[open] summary::before { content:'▾ '; }
+table { width:100%; border-collapse:collapse; font-size:.82em; margin:6px 0; }
+th { text-align:left; color:var(--text2); font-weight:500; padding:4px 6px; border-bottom:1px solid var(--border); }
+td { padding:4px 6px; border-bottom:1px solid rgba(45,49,72,.5); vertical-align:top; }
+.note-list { font-size:.82em; color:var(--text2); padding-left:16px; }
+.note-list li { margin:2px 0; }
+
+/* ── 日志 ── */
+.log-entry { background:var(--surface); border-radius:8px; padding:10px 12px; margin:8px 0; border:1px solid var(--border); }
+.log-date { font-weight:700; color:var(--blue); font-size:.9em; }
+.log-summary { font-size:.85em; margin-top:6px; color:var(--text); }
+.log-ops { margin-top:6px; }
+.op-row { display:flex; gap:6px; align-items:center; font-size:.82em; padding:3px 0; border-bottom:1px solid rgba(45,49,72,.3); flex-wrap:wrap; }
+.op-dir { font-weight:700; min-width:30px; }
+.op-buy { color:var(--red); }
+.op-sell { color:var(--green); }
+.op-hold { color:var(--text2); }
+.risk-item { font-size:.82em; color:var(--red); padding:2px 0; }
+.good-item { font-size:.82em; color:var(--green); padding:2px 0; }
+
+/* ── 回测 ── */
+.bt-table { overflow-x:auto; }
+.bt-table table { min-width:580px; }
+.bt-pnl-up { color:var(--green); font-weight:600; }
+.bt-pnl-down { color:var(--red); font-weight:600; }
+tr.bt-total { font-weight:700; border-top:2px solid var(--border); }
+.bt-note { font-size:.8em; color:var(--text2); margin-top:8px; }
+.bt-tabs { display:flex; gap:6px; margin-bottom:10px; }
+.bt-tab { background:var(--surface); color:var(--text2); border:1px solid var(--border); border-radius:6px; padding:5px 16px; font-size:.85em; cursor:pointer; transition:.15s; }
+.bt-tab:hover { border-color:var(--blue); color:var(--text); }
+.bt-tab.active { background:var(--blue); color:#fff; border-color:var(--blue); }
+.bt-subhead th { font-size:.72em; color:var(--text2); font-weight:400; padding:2px 6px; }
+
+/* ── 收起/展开 ── */
+.section { margin-bottom:16px; }
+.toggle-btn { background:var(--surface2); color:var(--text2); border:1px solid var(--border); border-radius:4px; padding:2px 10px; font-size:.75em; cursor:pointer; float:right; }
+.toggle-btn:hover { color:var(--text); border-color:var(--blue); }
+
+@media(max-width:480px) {
+  .cards { grid-template-columns:repeat(2,1fr); }
+  body { padding:8px; }
+}
+</style>
+</head>
+<body>
+
+<h1>📈 股票交易看板</h1>
+<div class="meta">数据更新: {{ update_date }} ｜ MACD(5,34,5) ｜ Fib 回撤</div>
+
+<!-- ════════ 持仓概览 ════════ -->
+<h2>📊 持仓概览</h2>
+<div class="cards">
+{% for h in holdings %}
+  <div class="card {{ 'golden' if h.is_golden else ('death' if h.is_death else ('cash' if h.is_cash else '')) }}">
+    <div class="name">{{ h.name }}</div>
+    <div class="code">{{ h.code }}</div>
+    {% if not h.is_cash %}
+      <div class="pnl {{ 'pnl-up' if h.pnl_val > 0 else ('pnl-down' if h.pnl_val < 0 else 'pnl-flat') }}">{{ h.pnl }}</div>
+      <div class="pos">仓位 {{ h.position }} ｜ 成本 {{ h.cost }}</div>
+      <div class="macd">
+        {% if h.is_golden %}
+          <span class="badge badge-green">金叉</span>
+        {% elif h.is_death %}
+          <span class="badge badge-red">死叉</span>
+        {% endif %}
+      </div>
+    {% else %}
+      <div class="pnl pnl-flat" style="font-size:1em">{{ h.position }}</div>
+    {% endif %}
+  </div>
+{% endfor %}
+</div>
+
+{% if cash_alert_level == 'danger' %}
+<div class="alert">
+  ⚠️ 现金 {{ cash_pct }} 低于趋势行情 15% 红线 — 立即收缩仓位，暂停加仓
+</div>
+{% elif cash_alert_level == 'warning' %}
+<div class="alert alert-amber">
+  ⚠️ 现金 {{ cash_pct }} 处于趋势仓位区间（15%-30%）— 仅顺势持有或回踩补仓，避免追高
+</div>
+{% endif %}
+
+{% if death_stocks %}
+<div class="alert">
+  🚨 死叉持仓: {{ death_stocks | join('、') }} — 严格执行止损，不加仓
+</div>
+{% endif %}
+
+<!-- ════════ 策略与回测摘要 ════════ -->
+<h2>🎯 策略与回测摘要</h2>
+<div class="bt-table">
+<table>
+  <thead>
+    <tr>
+      <th>股票</th>
+      <th>当前策略</th>
+      <th>历史回测</th>
+      <th>胜率</th>
+      <th>止损</th>
+      <th>状态</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for h in holdings if not h.is_cash %}
+    <tr>
+      <td>{{ h.name }}</td>
+      <td>{{ h.strategy or '—' }}</td>
+      <td class="{{ 'bt-pnl-up' if h.backtest_return and ('-' not in h.backtest_return) else ('bt-pnl-down' if h.backtest_return else '') }}">
+        {{ ('+' ~ h.backtest_return ~ '%') if h.backtest_return and ('-' not in h.backtest_return) else ((h.backtest_return ~ '%') if h.backtest_return else '—') }}
+      </td>
+      <td>{{ (h.win_rate ~ '%') if h.win_rate else '—' }}</td>
+      <td>
+        {% if h.stop_loss_hard %}
+          {{ h.stop_loss }} / {{ h.stop_loss_hard }}
+        {% else %}
+          {{ h.stop_loss or '—' }}
+        {% endif %}
+      </td>
+      <td>
+        {% if h.is_death %}
+          <span class="badge badge-red">死叉</span>
+        {% elif h.is_golden %}
+          <span class="badge badge-green">金叉</span>
+        {% else %}
+          —
+        {% endif %}
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+
+<!-- ════════ 操作要点 ════════ -->
+<h2>⚡ 操作要点</h2>
+{% for a in actions %}
+<details class="action-group" {% if loop.first %}open{% endif %}>
+  <summary>{{ a.title }}</summary>
+  {% if a.table %}
+  <table>
+    <thead><tr>{% for k in a.table[0].keys() %}<th>{{ k }}</th>{% endfor %}</tr></thead>
+    <tbody>{% for row in a.table %}<tr>{% for v in row.values() %}<td>{{ v }}</td>{% endfor %}</tr>{% endfor %}</tbody>
+  </table>
+  {% endif %}
+  {% if a.notes %}
+  <ul class="note-list">{% for n in a.notes %}<li>{{ n }}</li>{% endfor %}</ul>
+  {% endif %}
+</details>
+{% endfor %}
+
+<!-- ════════ 操作日志 ════════ -->
+<h2>📋 最近操作</h2>
+{% for log in logs %}
+<details class="log-entry" {% if loop.first %}open{% endif %}>
+  <summary><span class="log-date">{{ log.date }} {{ log.weekday }}</span></summary>
+
+  {% if log.operations %}
+  <div class="log-ops">
+    {% for op in log.operations %}
+    <div class="op-row">
+      {% set dir_text = op.get('方向', op.get('direction', '')) %}
+      <span class="op-dir {{ 'op-buy' if '买' in dir_text else ('op-sell' if '卖' in dir_text else 'op-hold') }}">
+        {{ dir_text }}
+      </span>
+      <span style="font-weight:600">{{ op.get('股票', op.get('stock', '')) }}</span>
+      <span style="color:var(--text2)">{{ op.get('仓位变化', op.get('position_change', '')) }}</span>
+      <span style="color:var(--text2)">{{ op.get('价格区间', op.get('price', '')) }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if log.risks %}
+  <h3 style="color:var(--red)">⚠ 风险</h3>
+  {% for r in log.risks %}<div class="risk-item">· {{ r }}</div>{% endfor %}
+  {% endif %}
+
+  {% if log.positives %}
+  <h3 style="color:var(--green)">✓ 利好</h3>
+  {% for g in log.positives %}<div class="good-item">· {{ g }}</div>{% endfor %}
+  {% endif %}
+
+  {% if log.summary %}
+  <div class="log-summary"><strong>总结:</strong> {{ log.summary }}</div>
+  {% endif %}
+</details>
+{% endfor %}
+
+<!-- ════════ 回测参考 ════════ -->
+{% if backtest %}
+<h2>📈 回测参考</h2>
+
+<!-- 回测 Tab 切换 -->
+<div class="bt-tabs">
+  <button class="bt-tab active" onclick="switchBT('1y')">1年回测</button>
+  <button class="bt-tab" onclick="switchBT('2y')">2年回测</button>
+</div>
+
+<!-- 1年回测 -->
+<div id="bt-1y" class="bt-panel">
+<h3>1年回测（{{ backtest.one_year.period }}）各股指定策略 · ¥10,000</h3>
+<div class="bt-table">
+<table>
+  <thead><tr><th>股票</th><th>策略</th><th colspan="3">无黄白线</th><th colspan="3">加黄白线</th><th>差异</th></tr>
+  <tr class="bt-subhead"><th></th><th></th><th>笔</th><th>胜率</th><th>盈亏</th><th>笔</th><th>胜率</th><th>盈亏</th><th></th></tr></thead>
+  <tbody>
+  {% for i in range(backtest.one_year.stocks|length) %}
+  {% set a = backtest.one_year.stocks[i] %}
+  {% set b = backtest.one_year_wy.stocks[i] %}
+  {% set diff = a.pnl - b.pnl %}
+  <tr>
+    <td>{{ a.name }}</td><td style="font-size:.78em">{{ a.strategy }}</td>
+    <td>{{ a.trades }}</td><td>{{ a.win_rate }}%</td>
+    <td class="{{ 'bt-pnl-up' if a.pnl >= 0 else 'bt-pnl-down' }}">{{ '{:+,}'.format(a.pnl) }}</td>
+    <td>{{ b.trades }}</td><td>{{ b.win_rate }}%</td>
+    <td class="{{ 'bt-pnl-up' if b.pnl >= 0 else 'bt-pnl-down' }}">{{ '{:+,}'.format(b.pnl) }}</td>
+    <td class="{{ 'bt-pnl-up' if diff > 0 else ('bt-pnl-down' if diff < 0 else '') }}" style="font-size:.78em">{{ '{:+,}'.format(diff) }}</td>
+  </tr>
+  {% endfor %}
+  <tr class="bt-total">
+    <td colspan="2">合计（¥60,000）</td>
+    <td></td><td></td>
+    <td class="bt-pnl-up">{{ '{:+,}'.format(backtest.one_year.total_pnl) }}</td>
+    <td></td><td></td>
+    <td class="{{ 'bt-pnl-up' if backtest.one_year_wy.total_pnl >= 0 else 'bt-pnl-down' }}">{{ '{:+,}'.format(backtest.one_year_wy.total_pnl) }}</td>
+    {% set d1 = backtest.one_year.total_pnl - backtest.one_year_wy.total_pnl %}
+    <td class="{{ 'bt-pnl-up' if d1 > 0 else 'bt-pnl-down' }}">{{ '{:+,}'.format(d1) }}</td>
+  </tr>
+  </tbody>
+</table>
+</div>
+</div>
+
+<!-- 2年回测 -->
+<div id="bt-2y" class="bt-panel" style="display:none">
+<h3>2年回测（{{ backtest.two_year.period }}）各股指定策略 · ¥10,000</h3>
+<div class="bt-table">
+<table>
+  <thead><tr><th>股票</th><th>策略</th><th colspan="4">无黄白线</th><th colspan="4">加黄白线</th><th>差异</th></tr>
+  <tr class="bt-subhead"><th></th><th></th><th>笔</th><th>胜率</th><th>盈亏</th><th>回撤</th><th>笔</th><th>胜率</th><th>盈亏</th><th>回撤</th><th></th></tr></thead>
+  <tbody>
+  {% for i in range(backtest.two_year.stocks|length) %}
+  {% set a = backtest.two_year.stocks[i] %}
+  {% set b = backtest.two_year_wy.stocks[i] %}
+  {% set diff = a.pnl - b.pnl %}
+  {% set dd_diff = a.max_dd - b.max_dd %}
+  <tr>
+    <td>{{ a.name }}</td><td style="font-size:.78em">{{ a.strategy }}</td>
+    <td>{{ a.trades }}</td><td>{{ a.win_rate }}%</td>
+    <td class="{{ 'bt-pnl-up' if a.pnl >= 0 else 'bt-pnl-down' }}">{{ '{:+,}'.format(a.pnl) }}</td>
+    <td>{{ a.max_dd }}%</td>
+    <td>{{ b.trades }}</td><td>{{ b.win_rate }}%</td>
+    <td class="{{ 'bt-pnl-up' if b.pnl >= 0 else 'bt-pnl-down' }}">{{ '{:+,}'.format(b.pnl) }}</td>
+    <td>{{ b.max_dd }}%</td>
+    <td class="{{ 'bt-pnl-up' if diff > 0 else ('bt-pnl-down' if diff < 0 else '') }}" style="font-size:.78em">{{ '{:+,}'.format(diff) }}</td>
+  </tr>
+  {% endfor %}
+  <tr class="bt-total">
+    <td colspan="2">合计（¥60,000）</td>
+    <td></td><td></td>
+    <td class="bt-pnl-up">{{ '{:+,}'.format(backtest.two_year.total_pnl) }}</td>
+    <td></td><td></td><td></td>
+    <td class="{{ 'bt-pnl-up' if backtest.two_year_wy.total_pnl >= 0 else 'bt-pnl-down' }}">{{ '{:+,}'.format(backtest.two_year_wy.total_pnl) }}</td>
+    <td></td>
+    {% set d2 = backtest.two_year.total_pnl - backtest.two_year_wy.total_pnl %}
+    <td class="{{ 'bt-pnl-up' if d2 > 0 else 'bt-pnl-down' }}">{{ '{:+,}'.format(d2) }}</td>
+  </tr>
+  </tbody>
+</table>
+</div>
+</div>
+
+<div class="alert-amber alert" style="margin-top:10px">
+  💡 <strong>黄白线结论:</strong> 无黄白线整体跑赢 — 1年多赚 ¥{{ "{:,}".format(backtest.one_year.total_pnl - backtest.one_year_wy.total_pnl) }}，2年多赚 ¥{{ "{:,}".format(backtest.two_year.total_pnl - backtest.two_year_wy.total_pnl) }}。白死叉提前止损 0 次，主要拦截了盈利入场。
+</div>
+
+<script>
+function switchBT(id){
+  document.querySelectorAll('.bt-panel').forEach(p=>p.style.display='none');
+  document.querySelectorAll('.bt-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('bt-'+id).style.display='block';
+  event.target.classList.add('active');
+}
+</script>
+{% endif %}
+
+<!-- ════════ 无情操盘手回测 ════════ -->
+{% if backtest and backtest.ruthless_one_year %}
+<h2>🔪 无情操盘手 vs 波浪理论</h2>
+<p style="font-size:.82em;color:var(--text2);margin-bottom:10px">
+  无情操盘手: B1超卖低吸 + B砖底部反转 ｜ 死叉/黄线清仓 + S1~S5出货 ｜ 止损=买入日低点
+</p>
+
+<div class="bt-tabs">
+  <button class="bt-tab active" onclick="switchRT('r1y')">1年对比</button>
+  <button class="bt-tab" onclick="switchRT('r2y')">2年对比</button>
+</div>
+
+<!-- 1年对比 -->
+<div id="rt-r1y" class="rt-panel">
+<h3>1年（{{ backtest.ruthless_one_year.period }}）各 ¥10,000</h3>
+<div class="bt-table">
+<table>
+  <thead><tr><th>股票</th><th colspan="3">波浪理论(无黄白)</th><th colspan="3">无情操盘手</th><th>差异</th></tr>
+  <tr class="bt-subhead"><th></th><th>笔</th><th>胜率</th><th>盈亏</th><th>笔</th><th>胜率</th><th>盈亏</th><th></th></tr></thead>
+  <tbody>
+  {% for r in backtest.ruthless_one_year.stocks %}
+  {% set w_list = backtest.one_year.stocks | selectattr('code', 'equalto', r.code) | list %}
+  {% set w = w_list[0] if w_list else none %}
+  {% set diff = (r.pnl - w.pnl) if w else none %}
+  <tr>
+    <td>{{ r.name }}</td>
+    <td>{{ w.trades if w else '—' }}</td><td>{{ (w.win_rate | string + '%') if w else '—' }}</td>
+    <td class="{{ 'bt-pnl-up' if (w and w.pnl >= 0) else ('bt-pnl-down' if (w and w.pnl < 0) else '') }}">{{ '{:+,}'.format(w.pnl) if w else '—' }}</td>
+    <td>{{ r.trades }}</td><td>{{ r.win_rate }}%</td>
+    <td class="{{ 'bt-pnl-up' if r.pnl >= 0 else 'bt-pnl-down' }}">{{ '{:+,}'.format(r.pnl) }}</td>
+    <td class="{{ 'bt-pnl-up' if (diff is not none and diff > 0) else ('bt-pnl-down' if (diff is not none and diff < 0) else '') }}" style="font-size:.78em">{{ '{:+,}'.format(diff) if diff is not none else '—' }}</td>
+  </tr>
+  {% endfor %}
+  <tr class="bt-total">
+    <td>合计（¥70,000）</td>
+    <td></td><td></td>
+    <td class="{{ 'bt-pnl-up' if backtest.one_year.total_pnl >= 0 else 'bt-pnl-down' }}">{{ '{:+,}'.format(backtest.one_year.total_pnl) }}（{{ backtest.one_year.total_pnl_pct }}%）</td>
+    <td></td><td></td>
+    <td class="{{ 'bt-pnl-up' if backtest.ruthless_one_year.total_pnl >= 0 else 'bt-pnl-down' }}">{{ '{:+,}'.format(backtest.ruthless_one_year.total_pnl) }}（{{ backtest.ruthless_one_year.total_pnl_pct }}%）</td>
+    {% set rd1 = backtest.ruthless_one_year.total_pnl - backtest.one_year.total_pnl %}
+    <td class="{{ 'bt-pnl-up' if rd1 > 0 else 'bt-pnl-down' }}">{{ '{:+,}'.format(rd1) }}</td>
+  </tr>
+  </tbody>
+</table>
+</div>
+</div>
+
+<!-- 2年对比 -->
+<div id="rt-r2y" class="rt-panel" style="display:none">
+<h3>2年（{{ backtest.ruthless_two_year.period }}）各 ¥10,000</h3>
+<div class="bt-table">
+<table>
+  <thead><tr><th>股票</th><th colspan="3">波浪理论(无黄白)</th><th colspan="3">无情操盘手</th><th>差异</th></tr>
+  <tr class="bt-subhead"><th></th><th>笔</th><th>胜率</th><th>盈亏</th><th>笔</th><th>胜率</th><th>盈亏</th><th></th></tr></thead>
+  <tbody>
+  {% for r in backtest.ruthless_two_year.stocks %}
+  {% set w_list = backtest.two_year.stocks | selectattr('code', 'equalto', r.code) | list %}
+  {% set w = w_list[0] if w_list else none %}
+  {% set diff = (r.pnl - w.pnl) if w else none %}
+  <tr>
+    <td>{{ r.name }}</td>
+    <td>{{ w.trades if w else '—' }}</td><td>{{ (w.win_rate | string + '%') if w else '—' }}</td>
+    <td class="{{ 'bt-pnl-up' if (w and w.pnl >= 0) else ('bt-pnl-down' if (w and w.pnl < 0) else '') }}">{{ '{:+,}'.format(w.pnl) if w else '—' }}</td>
+    <td>{{ r.trades }}</td><td>{{ r.win_rate }}%</td>
+    <td class="{{ 'bt-pnl-up' if r.pnl >= 0 else 'bt-pnl-down' }}">{{ '{:+,}'.format(r.pnl) }}</td>
+    <td class="{{ 'bt-pnl-up' if (diff is not none and diff > 0) else ('bt-pnl-down' if (diff is not none and diff < 0) else '') }}" style="font-size:.78em">{{ '{:+,}'.format(diff) if diff is not none else '—' }}</td>
+  </tr>
+  {% endfor %}
+  <tr class="bt-total">
+    <td>合计（¥70,000）</td>
+    <td></td><td></td>
+    <td class="{{ 'bt-pnl-up' if backtest.two_year.total_pnl >= 0 else 'bt-pnl-down' }}">{{ '{:+,}'.format(backtest.two_year.total_pnl) }}（{{ backtest.two_year.total_pnl_pct }}%）</td>
+    <td></td><td></td>
+    <td class="{{ 'bt-pnl-up' if backtest.ruthless_two_year.total_pnl >= 0 else 'bt-pnl-down' }}">{{ '{:+,}'.format(backtest.ruthless_two_year.total_pnl) }}（{{ backtest.ruthless_two_year.total_pnl_pct }}%）</td>
+    {% set rd2 = backtest.ruthless_two_year.total_pnl - backtest.two_year.total_pnl %}
+    <td class="{{ 'bt-pnl-up' if rd2 > 0 else 'bt-pnl-down' }}">{{ '{:+,}'.format(rd2) }}</td>
+  </tr>
+  </tbody>
+</table>
+</div>
+</div>
+
+<div class="alert-amber alert" style="margin-top:10px">
+  💡 <strong>策略对比结论:</strong>
+  1年无情操盘手 +{{ backtest.ruthless_one_year.total_pnl_pct }}% 跑赢波浪 +{{ backtest.one_year.total_pnl_pct }}%（趋势股抓得好）；
+  2年波浪 +{{ backtest.two_year.total_pnl_pct }}% 大幅跑赢无情 +{{ backtest.ruthless_two_year.total_pnl_pct }}%（频繁止损磨损本金）。
+  震荡股（湖北宜化）不适合无情操盘手。
+</div>
+
+<script>
+function switchRT(id){
+  document.querySelectorAll('.rt-panel').forEach(p=>p.style.display='none');
+  event.target.parentElement.querySelectorAll('.bt-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('rt-'+id).style.display='block';
+  event.target.classList.add('active');
+}
+</script>
+{% endif %}
+
+<div style="margin-top:24px;text-align:center;color:var(--text2);font-size:.72em">
+  📈 Stock Dashboard · ranyue.cloud/stock_dashboard
+</div>
+
+</body>
+</html>
