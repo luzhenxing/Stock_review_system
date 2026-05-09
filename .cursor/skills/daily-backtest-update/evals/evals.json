@@ -1,0 +1,49 @@
+{
+  "skill": "daily-backtest-update",
+  "evals": [
+    {
+      "id": "trigger-1",
+      "type": "should-trigger",
+      "prompt": "帮我更新回测，附上今天的持仓截图",
+      "expected": "触发 daily-backtest-update skill，执行 Step 1 解析截图"
+    },
+    {
+      "id": "trigger-2",
+      "type": "should-trigger",
+      "prompt": "更新持仓，今天总资产704788，可用2318",
+      "expected": "触发 daily-backtest-update skill，开始 Step 1 收集持仓数据"
+    },
+    {
+      "id": "trigger-3",
+      "type": "should-trigger",
+      "prompt": "回测一下我现在的持仓",
+      "expected": "触发 daily-backtest-update skill"
+    },
+    {
+      "id": "no-trigger-1",
+      "type": "should-not-trigger",
+      "prompt": "帮我查一下亨通光电最近的K线",
+      "expected": "不触发此 skill，仅查询行情数据"
+    },
+    {
+      "id": "no-trigger-2",
+      "type": "should-not-trigger",
+      "prompt": "把仓位总览里亨通光电的描述改成'震荡整理'",
+      "expected": "不触发此 skill，仅编辑看板文字，无新持仓数据"
+    },
+    {
+      "id": "core-function-1",
+      "type": "core-function",
+      "prompt": "用户发送持仓截图：亨通光电 600487 持仓11% 成本56.45 现价77.27 市值77270；总资产704788，可用2318。今天是2026-05-09。",
+      "expected_behavior": [
+        "Step 1：提取结构化数据，仓位比例 = 77270/704788 ≈ 11.0%",
+        "Step 2：调用 update_daily_ops.py --date 2026-05-09 --total-assets 704788 --available-cash 2318 --holdings '[{\"code\":\"600487\",\"name\":\"亨通光电\",\"position_pct\":11.0,\"cost\":56.45,\"price\":77.27,\"market_value\":77270}]'",
+        "Step 3：对 600487 跑 1年、2年回测",
+        "Step 4：拉取 600487 MACD + 白黄线状态",
+        "Step 5：基于信号给出 🟢/🟡/🔴 建议",
+        "Step 6：CONFIRM 后更新 持仓/仓位总览.md",
+        "Step 7：重启 uvicorn，验证 http://127.0.0.1:8002/ 返回 200"
+      ]
+    }
+  ]
+}
