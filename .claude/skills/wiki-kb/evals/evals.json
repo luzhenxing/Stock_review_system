@@ -1,0 +1,27 @@
+{
+  "name": "wiki-kb",
+  "should_trigger": [
+    "ingest this article into the wiki",
+    "把 raw 里的文章加到 wiki 里",
+    "search wiki for information about AI agents",
+    "lint the wiki and check for contradictions",
+    "process the new source file in raw/"
+  ],
+  "should_not_trigger": [
+    "search the web for latest React docs",
+    "create a new skill for deployment automation",
+    "fix the bug in server/app.py",
+    "what is the capital of France?"
+  ],
+  "core_function": {
+    "description": "Ingest: read a source from raw/, discuss takeaways, create wiki pages, update index and log",
+    "input": "ingest 'Agent 的超级进化.md' from raw/",
+    "expected_outputs": [
+      "wiki/sources/Agent 的超级进化.md created with summary and key takeaways",
+      "wiki/concepts/ 中创建或更新了相关概念页（如 Personalized Agent, Context injection）",
+      "wiki/entities/ 中创建或更新了相关实体页（如 Claude Code, Anthropic）",
+      "wiki/index.md updated with new page entries",
+      "wiki/log.md appended with ingest entry"
+    ]
+  }
+}
