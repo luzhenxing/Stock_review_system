@@ -234,13 +234,13 @@ def backtest_ruthless(code, name, capital=10000, years=1):
 
             # 最高优先: 死叉清仓
             if is_death_cross(white, yellow, i):
-                sell_reason = '☠️死叉清仓'
+                sell_reason = '[死叉清仓]'
             # 跌破黄线清仓
             elif price < yellow[i]:
-                sell_reason = '❌跌破黄线'
+                sell_reason = '[跌破黄线]'
             # 止损: 跌破买入日低点
             elif buy_low > 0 and price < buy_low:
-                sell_reason = '⚠️止损(买入日低点)'
+                sell_reason = '[止损:买入日低点]'
             # S2: 无条件清仓
             elif detect_s2(klines, white, i):
                 sell_reason = 'S2次高点反杀'
@@ -336,19 +336,19 @@ def backtest_ruthless(code, name, capital=10000, years=1):
 
 def main():
     holdings = [
-        ('002452', '长高电新'),
-        ('600744', '华银电力'),
-        ('600742', '富维股份'),
-        ('000422', '湖北宜化'),
-        ('002202', '金风科技'),
-        ('002498', '汉缆股份'),
-        ('600522', '中天科技'),
+        ('600487', '亨通光电'),
+        ('600875', '东方电气'),
+        ('688521', '芯原股份'),
+        ('000878', '云南铜业'),
+        ('002156', '通富微电'),
+        ('300274', '阳光电源'),
+        ('300450', '先导智能'),
     ]
 
     print("=" * 72)
     print("无情操盘手策略回测 — 持仓个股（1年 + 2年）")
     print("策略: B1超卖低吸 + B砖底部反转 | 死叉/黄线清仓 + S1~S5出货信号")
-    print("每只投入 ¥10,000")
+    print("每只投入 CNY10,000")
     print("=" * 72)
 
     for years in [1, 2]:
@@ -374,7 +374,7 @@ def main():
             sign = '+' if r['total_return'] >= 0 else ''
             holding_note = f" (持仓{r['final_shares']}股@{r['final_price']:.2f})" if r['final_shares'] > 0 else ''
             print(f"\n  {name}({code})")
-            print(f"    收益: {sign}¥{r['total_return']:,.0f} ({sign}{r['return_pct']:.1f}%)")
+            print(f"    收益: {sign}CNY{r['total_return']:,.0f} ({sign}{r['return_pct']:.1f}%)")
             print(f"    交易: {r['total_trades']}笔 | 卖出{r['sell_count']}笔 | 胜率{r['win_rate']:.0f}%({r['wins']}胜{r['losses']}负){holding_note}")
 
             # 打印交易明细
@@ -391,8 +391,8 @@ def main():
             total_pct = total_return / total_capital * 100
             sign = '+' if total_return >= 0 else ''
             print(f"\n  {'═' * 60}")
-            print(f"  {years}年汇总: ¥{total_capital:,.0f} → ¥{total_final:,.0f} ({sign}{total_pct:.1f}%)")
-            print(f"  {sign}¥{total_return:,.0f}")
+            print(f"  {years}年汇总: CNY{total_capital:,.0f} → CNY{total_final:,.0f} ({sign}{total_pct:.1f}%)")
+            print(f"  {sign}CNY{total_return:,.0f}")
             print(f"  {'═' * 60}")
 
 if __name__ == '__main__':

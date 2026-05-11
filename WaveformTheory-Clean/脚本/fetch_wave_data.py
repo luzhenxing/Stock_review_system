@@ -5,20 +5,24 @@
     python3 fetch_wave_data.py 600519          # 默认日K 250根
     python3 fetch_wave_data.py 000001 500      # 指定根数
     python3 fetch_wave_data.py 600519 250 week # 周K线
-数据来源: 东方财富(主) / 新浪财经(备)
+数据来源: 通达信本地(主) > 东方财富 > 新浪财经(备)
 """
 
 import sys
 import json
 import os
 import math
+import struct
 import requests
 import urllib3
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+# 通达信安装路径
+TDX_PATH = r"C:\new_tdx"
+
 # ═══════════════════════════════════════════════════════════════
-# 第一部分: K线数据抓取（复用 ruthless-trader 逻辑）
+# 第一部分: K线数据抓取
 # ═══════════════════════════════════════════════════════════════
 
 def get_market(code: str) -> str:
@@ -29,6 +33,72 @@ def get_market(code: str) -> str:
     elif code.startswith(("4", "8")):
         return "0"
     return "0"
+
+
+def _read_tdx_file(filepath: str) -> list:
+    """读取通达信K线文件（.day / .wk / .mon），32字节一条记录，按日期升序"""
+    if not os.path.exists(filepath):
+        return []
+    with open(filepath, "rb") as f:
+        raw = f.read()
+    records = []
+    for i in range(0, len(raw), 32):
+        chunk = raw[i:i + 32]
+        if len(chunk) < 32:
+            break
+        date, op, high, low, close, amount, volume, _ = struct.unpack("<IIIIIfII", chunk)
+        records.append({
+            "date": str(date),
+            "open": op / 100.0,
+            "high": high / 100.0,
+            "low": low / 100.0,
+            "close": close / 100.0,
+            "amount": amount,
+            "volume": float(volume / 100),  # 股→手，与东方财富口径一致
+        })
+    return records
+
+
+def _fetch_tdx(code: str, count: int, period: str = "day"):
+    """从通达信本地 vipdoc 读取K线数据"""
+    if code.startswith("6"):
+        market = "sh"
+    elif code.startswith(("0", "3")):
+        market = "sz"
+    elif code.startswith(("4", "8")):
+        market = "bj"
+    else:
+        return None
+
+    ext_map = {"day": ".day", "week": ".wk", "month": ".mon"}
+    dir_map = {"day": "lday", "week": "lweek", "month": "lmonth"}
+    ext = ext_map.get(period, ".day")
+    dir_name = dir_map.get(period, "lday")
+
+    filename = f"{market}{code}{ext}"
+    filepath = os.path.join(TDX_PATH, "vipdoc", market, dir_name, filename)
+
+    records = _read_tdx_file(filepath)
+    if not records:
+        return None
+
+    records = records[-count:]
+
+    # 计算涨跌幅/涨跌额/振幅（TDX原始数据不含这些字段）
+    prev_c = None
+    for r in records:
+        if prev_c and prev_c > 0:
+            r["pct_chg"] = (r["close"] - prev_c) / prev_c * 100
+            r["change"] = r["close"] - prev_c
+            r["amplitude"] = (r["high"] - r["low"]) / prev_c * 100
+        else:
+            r["pct_chg"] = 0.0
+            r["change"] = 0.0
+            r["amplitude"] = 0.0
+        r["turnover"] = 0.0  # TDX日K不含换手率
+        prev_c = r["close"]
+
+    return code, records
 
 
 def _fetch_eastmoney(code: str, count: int, klt: str = "101"):
@@ -138,15 +208,22 @@ def _fetch_sina(code: str, count: int):
 def fetch_kline(code: str, count: int = 250, period: str = "day"):
     """
     抓取K线数据
+    优先级: 通达信本地 > 东方财富 > 新浪财经
     period: "day"=日K, "week"=周K, "month"=月K
     """
+    # 1) 通达信本地
+    result = _fetch_tdx(code, count, period)
+    if result:
+        return result
+
+    # 2) 东方财富
     klt_map = {"day": "101", "week": "102", "month": "103"}
     klt = klt_map.get(period, "101")
-
     result = _fetch_eastmoney(code, count, klt)
     if result:
         return result
 
+    # 3) 新浪财经（仅日K）
     if period == "day":
         result = _fetch_sina(code, count)
         if result:

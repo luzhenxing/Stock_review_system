@@ -1,7 +1,19 @@
 {
   "permissions": {
     "allow": [
-      "WebFetch(domain:gist.github.com)"
+      "WebFetch(domain:gist.github.com)",
+      "Bash(python fetch_wave_data.py 600487 5)",
+      "Read(//c/new_tdx/vipdoc/sh/**)",
+      "Read(//c/new_tdx/vipdoc/sz/**)",
+      "Bash(python fetch_wave_data.py 002156 5)",
+      "Bash(python fetch_wave_data.py 600487 5 week)",
+      "Bash(python fetch_wave_data.py 600487 250)",
+      "Bash(python fetch_wave_data.py 002156 250)",
+      "Bash(python -c ' *)",
+      "Bash(python backtest_ruthless.py)",
+      "Bash(python adhoc_holdings_backtest.py)",
+      "Bash(taskkill //F //IM python.exe)",
+      "Bash(python -m uvicorn server.app:app --host 127.0.0.1 --port 8002)"
     ]
   }
 }

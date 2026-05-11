@@ -78,7 +78,7 @@ def _load_stock_profiles() -> tuple[dict[str, dict], dict[str, dict]]:
     for fp in stock_dir.glob("*.md"):
         if fp.name in skip:
             continue
-        meta = _parse_frontmatter(fp.read_text())
+        meta = _parse_frontmatter(fp.read_text(encoding="utf-8"))
         if not meta:
             continue
         name = fp.stem
