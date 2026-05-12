@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cp *)",
+      "Bash(rmdir *)",
+      "Bash(mkdir -p *)",
+      "Bash(ls -la *)",
+      "Bash(ls -lt *)",
+      "Bash(head *)",
+      "Bash(wc -l *)",
+      "Bash(hexdump -C *)",
+      "Bash(curl -sL *)",
+      "Bash(curl -L *)",
+      "Bash(curl -v *)",
+      "Read(D:/Stock_review _system/**)",
+      "Read(C:/Users/luzhe/.agents/**)",
+      "Bash(rm -rf \"D:*)",
+      "Bash(rm -rf \"C:/Users/luzhe/.claude/skills/*\")",
+      "Bash(rm -rf \"C:/Users/luzhe/.cursor/skills/*\")",
+      "Bash(rm -rf \"C:/Users/luzhe/AppData/Local/Temp/**)"
+    ]
+  }
+}

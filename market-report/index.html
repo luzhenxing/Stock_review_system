@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A股市场主线识别 · 2026-05-12</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --color-bg:       #020617;
+  --color-surface:  #0F172A;
+  --color-surface2: #1E293B;
+  --color-border:   #334155;
+  --color-muted:    #64748B;
+  --color-fg:       #F8FAFC;
+  --color-fg2:      #CBD5E1;
+  --color-accent:   #22C55E;
+  --color-up:       #22C55E;
+  --color-down:     #EF4444;
+  --color-warn:     #F59E0B;
+  --color-info:     #3B82F6;
+  --color-zt:       #F97316;
+  --color-purple:   #8B5CF6;
+  --font-heading:   'Fira Code', monospace;
+  --font-body:      'Fira Sans', system-ui, sans-serif;
+  --radius:         8px;
+  --radius-lg:      12px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-body);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Focus */
+*:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+/* Layout */
+.container { max-width: 1400px; margin: 0 auto; padding: 0 24px; }
+
+/* Header */
+.header {
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  position: sticky; top: 0; z-index: 50;
+  backdrop-filter: blur(12px);
+}
+.header-inner {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 24px; max-width: 1400px; margin: 0 auto;
+}
+.header-brand { display: flex; align-items: center; gap: 12px; }
+.header-logo {
+  width: 36px; height: 36px; border-radius: var(--radius);
+  background: linear-gradient(135deg, var(--color-accent), #10B981);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-heading); font-weight: 700; font-size: 18px;
+  color: #020617;
+}
+.header-title { font-family: var(--font-heading); font-weight: 600; font-size: 18px; letter-spacing: -0.5px; }
+.header-date { color: var(--color-muted); font-size: 13px; }
+.header-status {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 14px; border-radius: 20px;
+  background: rgba(34,197,94,0.12); color: var(--color-accent);
+  font-weight: 600; font-size: 14px;
+}
+.header-status-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: var(--color-accent);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Section */
+.section { padding: 40px 0; }
+.section-header { margin-bottom: 24px; }
+.section-title {
+  font-family: var(--font-heading); font-size: 20px; font-weight: 600;
+  letter-spacing: -0.5px; margin-bottom: 4px;
+  display: flex; align-items: center; gap: 10px;
+}
+.section-title svg { color: var(--color-accent); }
+.section-subtitle { color: var(--color-muted); font-size: 14px; }
+
+/* Index Cards */
+.index-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+.index-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  transition: border-color 150ms ease;
+}
+.index-card:hover { border-color: var(--color-muted); }
+.index-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+.index-card-name { font-family: var(--font-heading); font-size: 14px; color: var(--color-muted); font-weight: 500; }
+.index-card-price { font-family: var(--font-heading); font-size: 28px; font-weight: 700; letter-spacing: -1px; }
+.index-card-change { font-size: 16px; font-weight: 600; margin-top: 2px; }
+.index-card-change.up { color: var(--color-up); }
+.index-card-change.down { color: var(--color-down); }
+.sparkline { display: flex; align-items: flex-end; gap: 3px; height: 48px; padding: 4px 0; }
+.sparkline-bar {
+  flex: 1; border-radius: 2px 2px 0 0;
+  min-height: 4px; transition: opacity 150ms ease;
+}
+.index-card-meta { display: flex; gap: 20px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--color-border); }
+.index-card-meta-item { font-size: 12px; color: var(--color-muted); }
+.index-card-meta-item span { display: block; color: var(--color-fg2); font-weight: 500; margin-top: 2px; }
+
+/* Mainline Section */
+.mainline-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 600;
+  background: rgba(249,115,22,0.15); color: var(--color-zt);
+  margin-left: 8px;
+}
+.mainline-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+.mainline-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  transition: border-color 150ms ease;
+}
+.mainline-card:hover { border-color: var(--color-muted); }
+.mainline-card.primary { border-color: rgba(249,115,22,0.4); }
+.mainline-card.secondary { border-color: rgba(59,130,246,0.3); }
+.mainline-card-title {
+  font-family: var(--font-heading); font-weight: 600; font-size: 16px;
+  margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+}
+.mainline-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.mainline-stat {
+  background: var(--color-surface2); border-radius: var(--radius); padding: 10px 12px;
+}
+.mainline-stat-label { font-size: 11px; color: var(--color-muted); }
+.mainline-stat-value { font-family: var(--font-heading); font-size: 18px; font-weight: 700; margin-top: 2px; }
+.stock-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.stock-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 500;
+  background: var(--color-surface2); border: 1px solid var(--color-border);
+  transition: all 150ms ease;
+}
+.stock-tag:hover { border-color: var(--color-muted); background: var(--color-surface); }
+.stock-tag .consecutive {
+  background: var(--color-zt); color: #020617; padding: 1px 6px;
+  border-radius: 10px; font-family: var(--font-heading); font-weight: 700; font-size: 11px;
+}
+
+/* Tables */
+.table-container {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.table-header-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px; border-bottom: 1px solid var(--color-border);
+  font-family: var(--font-heading); font-weight: 600; font-size: 15px;
+}
+.table-header-bar .count { color: var(--color-muted); font-weight: 400; font-size: 13px; }
+.table-scroll { overflow-x: auto; }
+table {
+  width: 100%; border-collapse: collapse;
+  font-size: 13px; font-variant-numeric: tabular-nums;
+}
+thead th {
+  text-align: left; padding: 10px 16px;
+  font-family: var(--font-heading); font-size: 11px; font-weight: 600;
+  color: var(--color-muted); text-transform: uppercase; letter-spacing: 0.5px;
+  background: var(--color-surface2); border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+tbody td {
+  padding: 10px 16px; border-bottom: 1px solid rgba(51,65,85,0.4);
+  white-space: nowrap;
+}
+tbody tr { transition: background 150ms ease; }
+tbody tr:hover { background: rgba(30,41,59,0.5); }
+tbody tr:last-child td { border-bottom: none; }
+
+.tag-up { color: var(--color-up); font-weight: 600; }
+.tag-down { color: var(--color-down); font-weight: 600; }
+.tag-consecutive {
+  display: inline-block; padding: 2px 8px; border-radius: 10px;
+  font-family: var(--font-heading); font-weight: 700; font-size: 12px;
+  color: #020617; min-width: 32px; text-align: center;
+}
+.tag-consecutive.gold { background: var(--color-zt); }
+.tag-consecutive.silver { background: var(--color-muted); }
+.code-mono { font-family: var(--font-heading); font-size: 12px; color: var(--color-muted); }
+.sector-tag {
+  display: inline-block; padding: 2px 8px; border-radius: 10px;
+  font-size: 11px; background: rgba(59,130,246,0.15); color: var(--color-info);
+  font-weight: 500;
+}
+
+/* Sentiment */
+.sentiment-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.sentiment-card {
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg); padding: 16px 20px;
+}
+.sentiment-card-header { font-size: 12px; color: var(--color-muted); margin-bottom: 4px; }
+.sentiment-card-value { font-family: var(--font-heading); font-size: 22px; font-weight: 700; }
+.sentiment-card-desc { font-size: 13px; color: var(--color-fg2); margin-top: 2px; }
+.sentiment-bar-bg { background: var(--color-surface2); border-radius: 4px; height: 6px; margin-top: 8px; }
+.sentiment-bar-fill { height: 6px; border-radius: 4px; transition: width 300ms ease; }
+
+/* Conclusion Banner */
+.conclusion {
+  background: linear-gradient(135deg, rgba(34,197,94,0.08), rgba(59,130,246,0.08));
+  border: 1px solid rgba(34,197,94,0.25);
+  border-radius: var(--radius-lg); padding: 20px 24px;
+  display: flex; align-items: flex-start; gap: 14px;
+}
+.conclusion-icon { flex-shrink: 0; margin-top: 2px; }
+.conclusion-text { font-size: 15px; font-weight: 500; line-height: 1.7; }
+.conclusion-text strong { color: var(--color-accent); font-weight: 700; }
+
+/* Footer */
+.footer {
+  border-top: 1px solid var(--color-border); padding: 20px 0;
+  text-align: center; color: var(--color-muted); font-size: 12px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container { padding: 0 16px; }
+  .header-inner { flex-wrap: wrap; gap: 8px; }
+  .section { padding: 28px 0; }
+  .index-grid { grid-template-columns: 1fr; }
+  .mainline-cards { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-inner">
+    <div class="header-brand">
+      <div class="header-logo" aria-hidden="true">M</div>
+      <div>
+        <div class="header-title">A股市场主线识别</div>
+        <div class="header-date">2026年5月12日 · 盘中实时</div>
+      </div>
+    </div>
+    <div class="header-status">
+      <span class="header-status-dot" aria-hidden="true"></span>
+      主升 · 主动进攻
+    </div>
+  </div>
+</header>
+
+<main class="container">
+
+<!-- ===== 1. MARKET ENVIRONMENT ===== -->
+<section class="section">
+  <div class="section-header">
+    <h2 class="section-title">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+      市场环境
+    </h2>
+    <p class="section-subtitle">强势环境 · 指数连涨加速 · 放量普涨</p>
+  </div>
+
+  <div class="index-grid">
+    <div class="index-card">
+      <div class="index-card-header">
+        <div>
+          <div class="index-card-name">上证指数</div>
+          <div class="index-card-price">4,225.02</div>
+          <div class="index-card-change up">+1.08%</div>
+        </div>
+        <div style="text-align:right">
+          <div class="index-card-name">5日趋势</div>
+          <div style="font-family:var(--font-heading);font-size:12px;color:var(--color-accent)">
+            4112 → 4225 ↑
+          </div>
+        </div>
+      </div>
+      <div class="sparkline" id="spark-sh" aria-hidden="true"></div>
+      <div class="index-card-meta">
+        <div class="index-card-meta-item">成交量<span>7.63亿手</span></div>
+        <div class="index-card-meta-item">成交额<span>14,046亿</span></div>
+        <div class="index-card-meta-item">5日涨幅<span style="color:var(--color-up)">+2.74%</span></div>
+      </div>
+    </div>
+
+    <div class="index-card">
+      <div class="index-card-header">
+        <div>
+          <div class="index-card-name">创业板指</div>
+          <div class="index-card-price">3,928.97</div>
+          <div class="index-card-change up">+3.50%</div>
+        </div>
+        <div style="text-align:right">
+          <div class="index-card-name">5日趋势</div>
+          <div style="font-family:var(--font-heading);font-size:12px;color:var(--color-accent)">
+            3677 → 3929 ↑
+          </div>
+        </div>
+      </div>
+      <div class="sparkline" id="spark-cy" aria-hidden="true"></div>
+      <div class="index-card-meta">
+        <div class="index-card-meta-item">成交量<span>2.79亿手</span></div>
+        <div class="index-card-meta-item">成交额<span>13,983亿</span></div>
+        <div class="index-card-meta-item">5日涨幅<span style="color:var(--color-up)">+6.85%</span></div>
+      </div>
+    </div>
+
+    <div class="index-card">
+      <div class="index-card-header">
+        <div>
+          <div class="index-card-name">市场宽度</div>
+          <div class="index-card-price" style="font-size:28px">
+            <span style="color:var(--color-up)">5,905</span><span style="color:var(--color-muted);font-size:18px">/9,115</span>
+          </div>
+          <div class="index-card-change up">64.8% 上涨</div>
+        </div>
+      </div>
+      <div class="sentiment-bar-bg" style="margin-top:16px">
+        <div class="sentiment-bar-fill" style="width:64.8%;background:var(--color-up)"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:11px;color:var(--color-muted)">
+        <span>下跌 2,874</span><span>平盘 336</span>
+      </div>
+      <div class="index-card-meta">
+        <div class="index-card-meta-item">全市场成交额<span>11.73万亿</span></div>
+        <div class="index-card-meta-item">今日涨停<span style="color:var(--color-zt)">41家</span></div>
+        <div class="index-card-meta-item">炸板率<span>25.5%</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 2. MAINLINE ===== -->
+<section class="section">
+  <div class="section-header">
+    <h2 class="section-title">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      当前主线
+      <span class="mainline-badge">电网/电力 · 第一主线</span>
+    </h2>
+    <p class="section-subtitle">涨停板行业聚类分析 · 电网设备9家 + 电力5家 = 14家涨停称霸全场</p>
+  </div>
+
+  <div class="mainline-cards">
+    <div class="mainline-card primary">
+      <div class="mainline-card-title">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-zt)" stroke-width="2" stroke-linecap="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+        电网/电力 · 核心主线
+      </div>
+      <div class="mainline-stats">
+        <div class="mainline-stat">
+          <div class="mainline-stat-label">涨停家数</div>
+          <div class="mainline-stat-value" style="color:var(--color-zt)">14家</div>
+        </div>
+        <div class="mainline-stat">
+          <div class="mainline-stat-label">最高连板</div>
+          <div class="mainline-stat-value" style="color:var(--color-zt)">5板</div>
+        </div>
+        <div class="mainline-stat">
+          <div class="mainline-stat-label">成交额</div>
+          <div class="mainline-stat-value" style="font-size:14px">138.8亿</div>
+        </div>
+        <div class="mainline-stat">
+          <div class="mainline-stat-label">梯队完整度</div>
+          <div class="mainline-stat-value" style="color:var(--color-accent)">完整</div>
+        </div>
+      </div>
+      <div style="font-size:13px;margin-bottom:8px;color:var(--color-fg2);font-weight:600">龙头梯队</div>
+      <div class="stock-list">
+        <span class="stock-tag">大唐发电<span class="consecutive">5板</span></span>
+        <span class="stock-tag">远东股份<span class="consecutive">2板</span></span>
+        <span class="stock-tag">通光线缆<span class="consecutive" style="background:var(--color-purple)">20cm</span></span>
+        <span class="stock-tag">杭电股份<span class="consecutive" style="background:var(--color-info)">新</span></span>
+        <span class="stock-tag">通达股份<span class="consecutive" style="background:var(--color-info)">新</span></span>
+        <span class="stock-tag">汉缆股份<span class="consecutive" style="background:var(--color-info)">新</span></span>
+        <span class="stock-tag">大连电瓷<span class="consecutive" style="background:var(--color-info)">新</span></span>
+        <span class="stock-tag">太阳电缆</span>
+        <span class="stock-tag">柘中股份</span>
+        <span class="stock-tag">万控智造</span>
+        <span class="stock-tag">韶能股份</span>
+        <span class="stock-tag">太阳能</span>
+        <span class="stock-tag">晋控电力</span>
+        <span class="stock-tag">大连热电</span>
+      </div>
+    </div>
+
+    <div class="mainline-card secondary">
+      <div class="mainline-card-title">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-info)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        通信/元件 · 次级主线
+      </div>
+      <div class="mainline-stats">
+        <div class="mainline-stat">
+          <div class="mainline-stat-label">涨停家数</div>
+          <div class="mainline-stat-value" style="color:var(--color-info)">4家</div>
+        </div>
+        <div class="mainline-stat">
+          <div class="mainline-stat-label">最高连板</div>
+          <div class="mainline-stat-value" style="color:var(--color-info)">4板</div>
+        </div>
+        <div class="mainline-stat">
+          <div class="mainline-stat-label">成交额</div>
+          <div class="mainline-stat-value" style="font-size:14px">51.8亿</div>
+        </div>
+        <div class="mainline-stat">
+          <div class="mainline-stat-label">梯队完整度</div>
+          <div class="mainline-stat-value" style="color:var(--color-warn)">偏弱</div>
+        </div>
+      </div>
+      <div style="font-size:13px;margin-bottom:8px;color:var(--color-fg2);font-weight:600">龙头梯队</div>
+      <div class="stock-list">
+        <span class="stock-tag">通鼎互联<span class="consecutive">4板</span></span>
+        <span class="stock-tag">红板科技<span class="consecutive">4板</span></span>
+        <span class="stock-tag">线上线下<span class="consecutive" style="background:var(--color-purple)">20cm</span></span>
+        <span class="stock-tag">吴通控股<span class="consecutive" style="background:var(--color-purple)">20cm</span></span>
+      </div>
+      <div style="font-size:12px;color:var(--color-warn);margin-top:10px;padding:8px;background:rgba(245,158,11,0.08);border-radius:6px">
+        注意：方正科技炸板6次，大唐电信炸板2次，通信方向分歧较大
+      </div>
+    </div>
+
+    <div class="mainline-card">
+      <div class="mainline-card-title">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/></svg>
+        其他轮动方向
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="mainline-stat">
+          <div class="mainline-stat-label">汽车零部件</div>
+          <div class="mainline-stat-value" style="font-size:20px">4家<span style="font-size:12px;color:var(--color-muted)"> 涨停</span></div>
+          <div style="font-size:11px;color:var(--color-muted);margin-top:2px">全是首板，无高度标杆</div>
+        </div>
+        <div class="mainline-stat">
+          <div class="mainline-stat-label">通用设备</div>
+          <div class="mainline-stat-value" style="font-size:20px">3家<span style="font-size:12px;color:var(--color-muted)"> 涨停</span></div>
+          <div style="font-size:11px;color:var(--color-muted);margin-top:2px">海鸥2板，补涨性质</div>
+        </div>
+        <div class="mainline-stat">
+          <div class="mainline-stat-label">房地产开发</div>
+          <div class="mainline-stat-value" style="font-size:20px">2家<span style="font-size:12px;color:var(--color-muted)"> 涨停</span></div>
+          <div style="font-size:11px;color:var(--color-muted);margin-top:2px">深深房2板，独立行情</div>
+        </div>
+        <div class="mainline-stat">
+          <div class="mainline-stat-label">家居/消费</div>
+          <div class="mainline-stat-value" style="font-size:20px">5家<span style="font-size:12px;color:var(--color-muted)"> 涨停</span></div>
+          <div style="font-size:11px;color:var(--color-muted);margin-top:2px">分散，无板块效应</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 3. LIMIT-UP BOARD ===== -->
+<section class="section">
+  <div class="section-header">
+    <h2 class="section-title">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-6"/></svg>
+      涨停板梯队
+      <span class="mainline-badge" style="background:rgba(249,115,22,0.12)">41家涨停</span>
+    </h2>
+    <p class="section-subtitle">按连板数降序 · 5板→4板→3板→2板→首板</p>
+  </div>
+
+  <div class="table-container">
+    <div class="table-header-bar">
+      <span>涨停板完整列表</span>
+      <span class="count">共 41 家 | 炸板率 25.5% (14/55)</span>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>连板</th><th>代码</th><th>名称</th><th>最新价</th><th>成交额</th>
+            <th>首次封板</th><th>炸板次数</th><th>涨停统计</th><th>所属行业</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 4. BROKEN BOARD ===== -->
+<section class="section">
+  <div class="section-header">
+    <h2 class="section-title">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+      炸板池
+    </h2>
+    <p class="section-subtitle">封板被砸开 · 14家 · 重点关注次日能否反包</p>
+  </div>
+
+  <div class="table-container">
+    <div class="table-header-bar">
+      <span>炸板明细</span>
+      <span class="count">共 14 家</span>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>代码</th><th>名称</th><th>最新价</th><th>涨跌幅</th>
+            <th>炸板次数</th><th>首次封板</th><th>所属行业</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 5. SENTIMENT ===== -->
+<section class="section">
+  <div class="section-header">
+    <h2 class="section-title">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      情绪周期
+    </h2>
+    <p class="section-subtitle">主升阶段 · 分歧可控 · 处于主升→高位震荡过渡边缘</p>
+  </div>
+
+  <div class="sentiment-grid">
+    <div class="sentiment-card">
+      <div class="sentiment-card-header">最高连板</div>
+      <div class="sentiment-card-value" style="color:var(--color-zt)">5板</div>
+      <div class="sentiment-card-desc">大唐发电 (5/5)</div>
+      <div class="sentiment-bar-bg"><div class="sentiment-bar-fill" style="width:62.5%;background:var(--color-zt)"></div></div>
+    </div>
+    <div class="sentiment-card">
+      <div class="sentiment-card-header">涨停家数</div>
+      <div class="sentiment-card-value">41家</div>
+      <div class="sentiment-card-desc">中等偏活跃水平</div>
+      <div class="sentiment-bar-bg"><div class="sentiment-bar-fill" style="width:51%;background:var(--color-accent)"></div></div>
+    </div>
+    <div class="sentiment-card">
+      <div class="sentiment-card-header">炸板率</div>
+      <div class="sentiment-card-value" style="color:var(--color-warn)">25.5%</div>
+      <div class="sentiment-card-desc">14/55 · 可控但偏高</div>
+      <div class="sentiment-bar-bg"><div class="sentiment-bar-fill" style="width:25.5%;background:var(--color-warn)"></div></div>
+    </div>
+    <div class="sentiment-card">
+      <div class="sentiment-card-header">≥2板数量</div>
+      <div class="sentiment-card-value" style="color:var(--color-info)">13家</div>
+      <div class="sentiment-card-desc">梯队完整 2/3/4/5</div>
+    </div>
+    <div class="sentiment-card">
+      <div class="sentiment-card-header">20cm涨停</div>
+      <div class="sentiment-card-value" style="color:var(--color-purple)">5家</div>
+      <div class="sentiment-card-desc">创业板弹性活跃</div>
+    </div>
+    <div class="sentiment-card">
+      <div class="sentiment-card-header">市场宽度</div>
+      <div class="sentiment-card-value" style="color:var(--color-accent)">64.8%</div>
+      <div class="sentiment-card-desc">全面普涨格局</div>
+    </div>
+  </div>
+
+  <!-- Judgment basis -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;margin-top:16px">
+    <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius);padding:14px 16px">
+      <span style="color:var(--color-accent);font-weight:600;font-size:13px">✓ 正面信号</span>
+      <ul style="margin-top:6px;font-size:13px;color:var(--color-fg2);padding-left:16px;line-height:1.8">
+        <li>大唐发电5板为全市场最高标，情绪天花板抬高</li>
+        <li>电网方向 9家涨停，集中度极高，主线明确</li>
+        <li>64.8%普涨 + 创业板放量领涨，做多环境友好</li>
+        <li>2/3/4/5板各档位齐备，梯队结构健康</li>
+      </ul>
+    </div>
+    <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius);padding:14px 16px">
+      <span style="color:var(--color-warn);font-weight:600;font-size:13px">⚠ 风险信号</span>
+      <ul style="margin-top:6px;font-size:13px;color:var(--color-fg2);padding-left:16px;line-height:1.8">
+        <li>炸板率 25.5% 偏高，资金分歧在加大</li>
+        <li>大唐发电 5板中炸板3次，分歧严重</li>
+        <li>方正科技炸板6次最终未回封，通信方向分歧最大</li>
+        <li>汽车零部件全是首板，持续性质疑</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 6. TOMORROW WATCHLIST ===== -->
+<section class="section">
+  <div class="section-header">
+    <h2 class="section-title">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      明日观察重点
+    </h2>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px">
+    <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius);padding:14px 16px;display:flex;align-items:flex-start;gap:10px">
+      <span style="flex-shrink:0;width:24px;height:24px;border-radius:50%;background:rgba(249,115,22,0.2);color:var(--color-zt);display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-weight:700;font-size:12px">1</span>
+      <span style="font-size:13px;line-height:1.6"><strong style="color:var(--color-zt)">大唐发电能否6板</strong><br>低开5%+且30分钟不翻红 = 强转弱。必须高开或平开快速封板才算强。</span>
+    </div>
+    <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius);padding:14px 16px;display:flex;align-items:flex-start;gap:10px">
+      <span style="flex-shrink:0;width:24px;height:24px;border-radius:50%;background:rgba(59,130,246,0.2);color:var(--color-info);display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-weight:700;font-size:12px">2</span>
+      <span style="font-size:13px;line-height:1.6"><strong style="color:var(--color-info)">杭电/通达股份炸板后次日表现</strong><br>今日炸板但回封成功，明天若反包则主线强化，低开低走则主线弱化。</span>
+    </div>
+    <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius);padding:14px 16px;display:flex;align-items:flex-start;gap:10px">
+      <span style="flex-shrink:0;width:24px;height:24px;border-radius:50%;background:rgba(139,92,246,0.2);color:var(--color-purple);display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-weight:700;font-size:12px">3</span>
+      <span style="font-size:13px;line-height:1.6"><strong style="color:var(--color-purple)">电网涨停数能否维持</strong><br>今日9家涨停是基准，明日少于5家则主线扩散力不足，需降低预期。</span>
+    </div>
+    <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius);padding:14px 16px;display:flex;align-items:flex-start;gap:10px">
+      <span style="flex-shrink:0;width:24px;height:24px;border-radius:50%;background:rgba(245,158,11,0.2);color:var(--color-warn);display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-weight:700;font-size:12px">4</span>
+      <span style="font-size:13px;line-height:1.6"><strong style="color:var(--color-warn)">炸板率是否继续上升</strong><br>若升至35%+，说明资金畏高，需转入防守。回落至20%以下则是情绪加强信号。</span>
+    </div>
+    <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius);padding:14px 16px;display:flex;align-items:flex-start;gap:10px">
+      <span style="flex-shrink:0;width:24px;height:24px;border-radius:50%;background:rgba(34,197,94,0.2);color:var(--color-accent);display:flex;align-items:center;justify-content:center;font-family:var(--font-heading);font-weight:700;font-size:12px">5</span>
+      <span style="font-size:13px;line-height:1.6"><strong style="color:var(--color-accent)">通鼎互联能否5板跟上</strong><br>通信方向高标续强 → 双主线格局确立，市场空间进一步打开。</span>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 7. CONCLUSION ===== -->
+<section class="section">
+  <div class="conclusion">
+    <span class="conclusion-icon" aria-hidden="true">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+    </span>
+    <div class="conclusion-text">
+      <strong>电网/电力是当下核心主线，14家涨停称霸全场。</strong>
+      大唐发电5板为情绪锚点，主升延续但分歧已现（炸板率25.5%）。
+      明日紧盯<strong>龙头能否6板 + 炸板股能否反包</strong>——成则加仓主线，败则去弱留强转入防守。
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <div class="container">
+    数据来源：通达信本地K线 + AKShare网络接口 · 东方财富涨停数据 · 数据日期 2026-05-12 · AI生成仅供参考
+  </div>
+</footer>
+
+<script>
+// === DATA ===
+const shData = [
+  {date:"0430",open:4107.30,close:4112.16,high:4118.76,low:4100.97,vol:656912728},
+  {date:"0506",open:4135.45,close:4160.17,high:4166.15,low:4129.91,vol:701177480},
+  {date:"0507",open:4168.45,close:4180.09,high:4180.21,low:4163.14,vol:685574249},
+  {date:"0508",open:4163.85,close:4179.95,high:4183.06,low:4154.25,vol:697019094},
+  {date:"0511",open:4201.35,close:4225.02,high:4229.58,low:4186.08,vol:762736287}
+];
+const cyData = [
+  {date:"0430",open:3704.11,close:3677.15,high:3718.40,low:3660.22,vol:207981816},
+  {date:"0506",open:3760.67,close:3778.16,high:3815.07,low:3724.53,vol:256344199},
+  {date:"0507",open:3807.99,close:3833.06,high:3840.06,low:3761.23,vol:258151805},
+  {date:"0508",open:3792.04,close:3796.13,high:3840.16,low:3787.17,vol:249242926},
+  {date:"0511",open:3829.61,close:3928.97,high:3937.87,low:3797.50,vol:279245670}
+];
+
+const limitUpData = [{"c":5,"code":"601991","name":"大唐发电","price":6.70,"amt":"44.3亿","time":"093402","brk":3,"stat":"5/5","sector":"电力"},{"c":4,"code":"603459","name":"红板科技","price":98.08,"amt":"0.75亿","time":"092501","brk":0,"stat":"4/4","sector":"元件"},{"c":4,"code":"002491","name":"通鼎互联","price":25.00,"amt":"25.4亿","time":"093954","brk":1,"stat":"4/4","sector":"通信设备"},{"c":3,"code":"002918","name":"蒙娜丽莎","price":14.00,"amt":"0.51亿","time":"092500","brk":0,"stat":"3/3","sector":"家居用品"},{"c":3,"code":"600530","name":"交大昂立","price":7.21,"amt":"2.83亿","time":"092502","brk":2,"stat":"3/3","sector":"食品加工"},{"c":3,"code":"600076","name":"康欣新材","price":4.36,"amt":"2.53亿","time":"093101","brk":0,"stat":"3/3","sector":"包装印刷"},{"c":2,"code":"001259","name":"利仁科技","price":45.45,"amt":"0.19亿","time":"092500","brk":0,"stat":"2/2","sector":"小家电"},{"c":2,"code":"300449","name":"汉邦高科","price":11.47,"amt":"0.84亿","time":"092500","brk":0,"stat":"2/2","sector":"计算机设备"},{"c":2,"code":"300736","name":"百邦科技","price":48.19,"amt":"5.98亿","time":"093021","brk":3,"stat":"2/2","sector":"其他电子"},{"c":2,"code":"603269","name":"海鸥股份","price":20.42,"amt":"2.77亿","time":"093144","brk":0,"stat":"5/3","sector":"通用设备"},{"c":2,"code":"001211","name":"双枪科技","price":53.55,"amt":"1.72亿","time":"093309","brk":1,"stat":"2/2","sector":"家居用品"},{"c":2,"code":"600869","name":"远东股份","price":22.90,"amt":"14.3亿","time":"093857","brk":1,"stat":"2/2","sector":"电网设备"},{"c":2,"code":"000029","name":"深深房A","price":26.49,"amt":"3.76亿","time":"101054","brk":0,"stat":"2/2","sector":"房地产开发"},{"c":1,"code":"300959","name":"线上线下","price":111.49,"amt":"2.68亿","time":"092500","brk":0,"stat":"1/1","sector":"通信服务"},{"c":1,"code":"603007","name":"花王股份","price":7.65,"amt":"10.5亿","time":"092501","brk":2,"stat":"1/1","sector":"汽车零部件"},{"c":1,"code":"603052","name":"可川科技","price":95.35,"amt":"1.44亿","time":"092501","brk":0,"stat":"1/1","sector":"消费电子"},{"c":1,"code":"603037","name":"凯众股份","price":15.62,"amt":"1.56亿","time":"093105","brk":0,"stat":"1/1","sector":"汽车零部件"},{"c":1,"code":"603682","name":"锦和商管","price":9.56,"amt":"1.62亿","time":"093111","brk":1,"stat":"1/1","sector":"一般零售"},{"c":1,"code":"000925","name":"众合科技","price":10.76,"amt":"10.2亿","time":"093154","brk":1,"stat":"1/1","sector":"轨交设备"},{"c":1,"code":"000601","name":"韶能股份","price":8.09,"amt":"5.30亿","time":"093457","brk":1,"stat":"1/1","sector":"电力"},{"c":1,"code":"603331","name":"百达精工","price":16.28,"amt":"1.88亿","time":"093910","brk":0,"stat":"1/1","sector":"通用设备"},{"c":1,"code":"301197","name":"工大科雅","price":40.64,"amt":"2.41亿","time":"094003","brk":0,"stat":"1/1","sector":"通用设备"},{"c":1,"code":"603070","name":"万控智造","price":15.46,"amt":"0.82亿","time":"094141","brk":0,"stat":"1/1","sector":"电网设备"},{"c":1,"code":"603618","name":"杭电股份","price":41.03,"amt":"32.9亿","time":"094300","brk":2,"stat":"12/6","sector":"电网设备"},{"c":1,"code":"002522","name":"浙江众成","price":7.73,"amt":"4.67亿","time":"094321","brk":1,"stat":"1/1","sector":"塑料"},{"c":1,"code":"603211","name":"晋拓股份","price":30.89,"amt":"2.70亿","time":"094658","brk":0,"stat":"1/1","sector":"汽车零部件"},{"c":1,"code":"002346","name":"柘中股份","price":20.37,"amt":"1.80亿","time":"094830","brk":0,"stat":"1/1","sector":"电网设备"},{"c":1,"code":"603320","name":"迪贝电气","price":26.29,"amt":"0.83亿","time":"094942","brk":0,"stat":"1/1","sector":"电机"},{"c":1,"code":"000591","name":"太阳能","price":5.85,"amt":"12.3亿","time":"095015","brk":2,"stat":"1/1","sector":"电力"},{"c":1,"code":"002300","name":"太阳电缆","price":10.67,"amt":"6.59亿","time":"095115","brk":0,"stat":"1/1","sector":"电网设备"},{"c":1,"code":"300265","name":"通光线缆","price":23.22,"amt":"20.8亿","time":"095333","brk":1,"stat":"1/1","sector":"电网设备"},{"c":1,"code":"002560","name":"通达股份","price":16.50,"amt":"15.8亿","time":"100009","brk":3,"stat":"1/1","sector":"电网设备"},{"c":1,"code":"000006","name":"深振业A","price":10.45,"amt":"6.02亿","time":"100024","brk":3,"stat":"1/1","sector":"房地产开发"},{"c":1,"code":"000767","name":"晋控电力","price":4.65,"amt":"10.9亿","time":"101106","brk":1,"stat":"1/1","sector":"电力"},{"c":1,"code":"000950","name":"重药控股","price":6.81,"amt":"5.69亿","time":"101212","brk":0,"stat":"1/1","sector":"医药商业"},{"c":1,"code":"603895","name":"天永智能","price":36.50,"amt":"1.58亿","time":"101311","brk":0,"stat":"4/2","sector":"专用设备"},{"c":1,"code":"002498","name":"汉缆股份","price":10.01,"amt":"25.5亿","time":"101700","brk":0,"stat":"1/1","sector":"电网设备"},{"c":1,"code":"002606","name":"大连电瓷","price":16.94,"amt":"7.93亿","time":"101706","brk":0,"stat":"1/1","sector":"电网设备"},{"c":1,"code":"600719","name":"大连热电","price":10.62,"amt":"7.34亿","time":"102918","brk":1,"stat":"5/3","sector":"电力"},{"c":1,"code":"603950","name":"长源东谷","price":77.06,"amt":"6.38亿","time":"103502","brk":0,"stat":"4/2","sector":"汽车零部件"},{"c":1,"code":"300292","name":"吴通控股","price":7.34,"amt":"20.9亿","time":"103530","brk":0,"stat":"1/1","sector":"通信服务"}];
+
+const brokenData = [{"code":"002066","name":"瑞泰科技","price":24.61,"chg":-4.09,"brk":1,"time":"093009","sector":"装修建材"},{"code":"603381","name":"永臻股份","price":25.13,"chg":1.13,"brk":1,"time":"093043","sector":"光伏设备"},{"code":"605186","name":"健麾信息","price":23.27,"chg":3.93,"brk":1,"time":"093213","sector":"自动化设备"},{"code":"002331","name":"皖通科技","price":10.30,"chg":5.53,"brk":2,"time":"093233","sector":"IT服务"},{"code":"600198","name":"大唐电信","price":10.52,"chg":8.23,"brk":2,"time":"093423","sector":"通信设备"},{"code":"601609","name":"金田股份","price":12.21,"chg":7.01,"brk":2,"time":"093813","sector":"工业金属"},{"code":"002787","name":"华源控股","price":24.98,"chg":7.53,"brk":2,"time":"093827","sector":"包装印刷"},{"code":"002896","name":"中大力德","price":80.61,"chg":6.68,"brk":1,"time":"094703","sector":"通用设备"},{"code":"000981","name":"山子高科","price":4.25,"chg":8.14,"brk":3,"time":"094903","sector":"汽车零部件"},{"code":"600601","name":"方正科技","price":14.38,"chg":7.88,"brk":6,"time":"095200","sector":"元件"},{"code":"002939","name":"长城证券","price":9.77,"chg":6.54,"brk":1,"time":"095412","sector":"证券"},{"code":"002637","name":"赞宇科技","price":12.68,"chg":5.84,"brk":1,"time":"095733","sector":"化学制品"},{"code":"301196","name":"唯科科技","price":146.38,"chg":15.04,"brk":1,"time":"100900","sector":"塑料"},{"code":"002129","name":"TCL中环","price":9.94,"chg":9.35,"brk":1,"time":"103651","sector":"光伏设备"}];
+
+// === SPARKLINES ===
+function drawSparkline(id, data) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const allPrices = data.flatMap(d => [d.open, d.high, d.low, d.close]);
+  const min = Math.min(...allPrices);
+  const max = Math.max(...allPrices);
+  const range = max - min || 1;
+  data.forEach(d => {
+    const bar = document.createElement('div');
+    bar.className = 'sparkline-bar';
+    bar.style.height = Math.max(2, ((d.close - min) / range) * 100) + '%';
+    bar.style.background = d.close >= d.open ? 'var(--color-up)' : 'var(--color-down)';
+    bar.style.opacity = '0.85';
+    bar.title = `${d.date}: 开 ${d.open.toFixed(0)} 收 ${d.close.toFixed(0)}`;
+    el.appendChild(bar);
+  });
+}
+
+const shCloses = shData.map(d => d.close);
+const cyCloses = cyData.map(d => d.close);
+drawSparkline('spark-sh', shData);
+drawSparkline('spark-cy', cyData);
+
+// === TABLE RENDERING ===
+document.addEventListener('DOMContentLoaded', () => {
+  // Find the limit-up table (first table with thead)
+  const allTheads = document.querySelectorAll('thead');
+  allTheads.forEach(thead => {
+    const ths = thead.querySelectorAll('th');
+    if (ths.length > 0 && ths[0].textContent.trim() === '连板') {
+      // This is the limit-up table
+      const tbody = thead.parentElement.parentElement.querySelector('tbody');
+      limitUpData.forEach(row => {
+        const tr = document.createElement('tr');
+        const cls = row.c >= 5 ? 'gold' : (row.c >= 3 ? 'gold' : (row.c >= 2 ? 'silver' : ''));
+        const cStyle = row.c >= 3 ? 'gold' : (row.c >= 2 ? 'silver' : '');
+        tr.innerHTML = `<td><span class="tag-consecutive ${cStyle}">${row.c}板</span></td><td class="code-mono">${row.code}</td><td style="font-weight:600">${row.name}</td><td>${row.price.toFixed(2)}</td><td>${row.amt}</td><td class="code-mono">${row.time}</td><td>${row.brk > 0 ? '<span style="color:var(--color-warn);font-weight:600">'+row.brk+'次</span>' : '<span style="color:var(--color-muted)">0</span>'}</td><td class="code-mono">${row.stat}</td><td><span class="sector-tag">${row.sector}</span></td>`;
+        tbody.appendChild(tr);
+      });
+    }
+    if (ths.length > 0 && ths[1] && ths[1].textContent.trim() === '名称' && ths[0].textContent.trim() === '代码') {
+      // This is the broken board table
+      const tbody = thead.parentElement.parentElement.querySelector('tbody');
+      brokenData.forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td class="code-mono">${row.code}</td><td style="font-weight:600">${row.name}</td><td>${row.price.toFixed(2)}</td><td class="${row.chg > 0 ? 'tag-up' : 'tag-down'}">${row.chg > 0 ? '+' : ''}${row.chg.toFixed(2)}%</td><td>${row.brk > 1 ? '<span style="color:var(--color-warn);font-weight:600">'+row.brk+'次</span>' : row.brk+'次'}</td><td class="code-mono">${row.time}</td><td><span class="sector-tag">${row.sector}</span></td>`;
+        tbody.appendChild(tr);
+      });
+    }
+  });
+});
+</script>
+
+</body>
+</html>

@@ -11,10 +11,14 @@
             "id": "86687aa3ffdb7b38",
             "type": "leaf",
             "state": {
-              "type": "graph",
-              "state": {},
-              "icon": "lucide-git-fork",
-              "title": "关系图谱"
+              "type": "markdown",
+              "state": {
+                "file": "wiki/concepts/wiki-kb-skill.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "wiki-kb-skill"
             }
           }
         ]
@@ -70,7 +74,8 @@
               "title": "书签"
             }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "horizontal",
@@ -178,6 +183,9 @@
   },
   "active": "86687aa3ffdb7b38",
   "lastOpenFiles": [
+    "wiki/concepts/llm-wiki.md",
+    "wiki/analyses/Agent能力两视角对比.md",
+    "wiki/concepts/wiki-kb-skill.md",
     "wiki/sources/个人业务Agent升级指南.md",
     "2026-05-10.md",
     "wiki/concepts/Agent 自进化.md",
@@ -186,7 +194,6 @@
     "wiki/index.md.tmp.32424.4c82ce5a62f0",
     "wiki/index.md.tmp.32424.f2828c9a1c5a",
     "wiki/index.md.tmp.32424.387f45b28070",
-    "wiki/analyses/Agent能力两视角对比.md",
     "wiki/analyses/Agent能力两视角对比.md.tmp.32424.643b95887267",
     "wiki/concepts/Skill模板-宏观流动性监控.md",
     "wiki/concepts/Skill模板-美股市场情绪监控.md",
@@ -214,8 +221,6 @@
     "wiki/index.md.tmp.26084.99f715706048",
     "wiki/concepts/利弗莫尔交易规则.md",
     "wiki/entities/老帕特里奇.md",
-    "wiki/entities/杰西·利弗莫尔.md",
-    "wiki/entities/丁圣元.md",
     "raw/investing/_extracted/OEBPS/Image00023.jpg",
     "raw/investing/_extracted/OEBPS/Image00021.jpg",
     "raw/investing/_extracted/OEBPS/Image00020.jpg",
