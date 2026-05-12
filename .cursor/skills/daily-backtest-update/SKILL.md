@@ -63,13 +63,18 @@ Result：得到结构化持仓列表 + 资金信息，确认无误后进入 Step
 
 ### Step 2 — 运行 update_daily_ops.py — BLOCKING
 
-```bash
-cd <PROJECT_ROOT>
-python -X utf8 ".cursor/skills/daily-backtest-update/scripts/update_daily_ops.py" \
-  --date "YYYY-MM-DD" \
-  --total-assets <总资产> \
-  --available-cash <余额> \
-  --holdings '<JSON>'
+> `dailyOperations.txt` 的正确位置是 `WaveformTheory-Clean/`，必须通过环境变量 `PROJECT_ROOT` 指定，否则脚本会写到项目根目录。
+
+PowerShell：
+```powershell
+cd "D:\Stock_review _system\WaveformTheory-Clean"
+$env:PROJECT_ROOT = "D:\Stock_review _system\WaveformTheory-Clean"
+$holdings = '<JSON>'
+python -X utf8 "D:\Stock_review _system\.cursor\skills\daily-backtest-update\scripts\update_daily_ops.py" `
+  --date "YYYY-MM-DD" `
+  --total-assets <总资产> `
+  --available-cash <余额> `
+  --holdings $holdings
 ```
 
 `--holdings` JSON 格式：

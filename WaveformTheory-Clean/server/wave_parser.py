@@ -244,7 +244,11 @@ def get_update_date() -> str:
     content = _safe_read(VAULT / "持仓/仓位总览.md")
     if content is None:
         return "—"
+    # 先匹配 Obsidian 链接格式 [[YYYY-MM-DD]]，再匹配普通日期
     m = re.search(r"更新至.*?\[\[(\d{4}-\d{2}-\d{2})\]\]", content)
+    if m:
+        return m.group(1)
+    m = re.search(r"更新至\s*(\d{4}-\d{2}-\d{2})", content)
     return m.group(1) if m else "未知"
 
 
